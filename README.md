@@ -2,68 +2,69 @@
 
 将读过的每本书的方法论提取出来，通过 AI 深度加工，形成可搜索、可匹配、可落地的专属实践指南。
 
-## 🌟 核心亮点
+## 🌟 核心功能
 
-1. **AI 智能场景匹配**：基于 LLM 的语义理解，输入您当前面临的问题（如“最近总是焦虑”），自动匹配最适合的读书方法论。
-2. **互动式计划生成**：
-   - **追问环节**：AI 会根据选中的方法论，向您提出针对性的个人情况追问。
-   - **迭代微调**：生成初稿后，您可以直接通过对话向 AI 提出修改意见（如“步骤稍微精简一些”），AI 将实时调整直到您满意。
-3. **高颜值行指南导出**：支持将定制化的行动计划一键导出为高清 PNG 图片，方便打印、分享或作为手机壁纸提醒自己。
-4. **手动收录确认**：只有在您对生成的计划完全满意并点击“确认收录”后，数据才会入库。
-5. **极简优雅设计**：采用 Claude 式的复古审美，极致留白，提供纸质书般的沉浸式阅读与操作体验。
+1. **书籍 & 方法论管理** — 添加书籍，为每本书录入多条方法论（名称、描述、步骤、标签）。支持 AI 自动从长文本提炼结构化方法论。
+2. **智能搜索 & 匹配** — 输入当前目标或困扰，自动匹配相关方法论。开启 AI 密钥后支持 **AI 语义匹配**（语义理解而非简单的关键词）。
+3. **互动式计划生成** — 
+   - **AI 追问**：根据选中的方法论，由 AI 生成针对用户的追问以获取更多背景。
+   - **交互微调**：生成初稿后可直接与 AI 交流修改意见（如“更简单一点”、“侧重理财”），实时更新计划。
+4. **高颜值行指南导出** — 支持将定制计划一键导出为高清 PNG 图片（优化排版与底部留白），方便打印或分享。
+5. **管理与删除** — 计划生成需手动“确认收录”；支持删除已生成的计划以及单个方法论。
+6. **自动化录入** — 根据书名自动查询豆瓣补全书籍封面、作者和简介。
 
-## 🛠️ 技术栈
+---
 
-本项目采用 **pnpm workspace** 管理的 Monorepo 架构：
+## 🛠️ 技术栈与架构 (pnpm workspace)
 
-- **前端**：React 18 + TypeScript + Vite + NutUI (移动端友好) + Lucide Icons
-- **后端**：Express 5.x + TypeScript + Prisma ORM
-- **数据**：PostgreSQL
-- **AI 能力**：深度集成 OpenAI/DeepSeek API，支持自定义模型与 Base URL
+| 层级 | 技术选型 | 说明 |
+|---|---|---|
+| 包管理 | pnpm workspace | 统一管理前后端依赖 |
+| 前端 | React 19 + TypeScript | 配合 Vite 构建 |
+| UI库 | NutUI React | 移动端优先设计 |
+| 状态管理 | Zustand | 轻量级状态管理 |
+| 后端 | Express 5.x + TypeScript | 提供 RESTful API |
+| 数据库 | PostgreSQL + Prisma | 存储书籍、方法论、计划等 |
+| AI | OpenAI SDK | 集成场景化匹配与计划生成 |
 
-## 🚀 快速开始
-
-### 1. 克隆与安装
-
-```bash
-git clone https://github.com/Luchen-0420/read2application.git
-cd read2application
-pnpm install
-```
-
-### 2. 环境配置
-
-在 `packages/backend/` 下创建 `.env` 文件，并配置数据库连接：
-
-```env
-DATABASE_URL="postgresql://username:password@localhost:5432/read2application?schema=public"
-```
-
-### 3. 数据库初始化
-
-```bash
-cd packages/backend
-npx prisma migrate dev --name init
-npx prisma db seed
-```
-
-### 4. 启动项目
-
-在根目录下运行：
-
-```bash
-pnpm dev
-```
-
-- 前端地址：`http://localhost:5173`
-- 后端地址：`http://localhost:3000`
+---
 
 ## 📂 目录结构
 
-- `packages/frontend/`: 基于 React 的单页应用。
-- `packages/backend/`: 基于 Express 的 API 服务器，包含 AI 逻辑与数据库操作。
-- `docs/`: 存放项目相关文档。
+```text
+read2application/
+├── packages/
+│   ├── frontend/         # React SPA (api, components, pages, store)
+│   └── backend/          # Express Server (controllers, routes, services)
+├── docs/                 # 项目文档与技术规格
+└── README.md             # 本文件
+```
 
-## 🤝 贡献与反馈
+---
 
-如果您有任何好的想法或发现 Bug，欢迎通过 Issue 或 Pull Request 告诉我们！
+## 📊 数据库设计 (Prisma)
+
+### `Book` / `Methodology` / `Plan`
+- 核心模型支持完整的 CRUD。
+- `Methodology` 关联 `Book` (Cascade Delete)。
+- `MethodologyTag` 实现方法论与标签的多对多关联。
+- `Plan` 存储经过 AI 互动生成的最终执行方案。
+
+---
+
+## 🚀 快速开始
+
+1. **安装依赖**: `pnpm install`
+2. **配置环境**: 在 `packages/backend/` 创建 `.env` 并设置 `DATABASE_URL`。
+3. **运行迁移**: `cd packages/backend && npx prisma migrate dev`
+4. **启动项目**: 根目录下运行 `pnpm dev`
+
+---
+
+## 💡 视觉设计方向
+
+- **色彩**：柔和卡其灰白背景 (`#FDFDFD`) + 复古赭石强调色 (`#D97757`)。
+- **布局**：Claude 风格极致留白，移除夸张阴影，追求纸质书般的质感。
+
+> [!NOTE]
+> 更多详细设计规格请参阅 [docs/README_FULL.md](file:///d:/代码/13-自己的项目/read2application/docs/README_FULL.md)。
