@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Book {
+  id            String        @id @default(uuid())
+  title         String
+  author        String
+  coverUrl      String?
+  summary       String?
+  category      String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  methodologies Methodology[]
+}
+
+model Methodology {
+  id                  String           @id @default(uuid())
+  bookId              String
+  book                Book             @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  name                String
+  description         String
+  steps               Json             // Array of { order: number, content: string }
+  applicableScenarios String?
+  createdAt           DateTime         @default(now())
+  tags                MethodologyTag[]
+}
+
+model Tag {
+  id            String           @id @default(uuid())
+  name          String           @unique
+  methodologies MethodologyTag[]
+}
+
+model MethodologyTag {
+  methodologyId String
+  methodology   Methodology @relation(fields: [methodologyId], references: [id], onDelete: Cascade)
+  tagId         String
+  tag           Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([methodologyId, tagId])
+}
+
+model Plan {
+  id        String   @id @default(uuid())
+  title     String
+  summary   String
+  content   Json     // stores the phases and actions
+  createdAt DateTime @default(now())
+}

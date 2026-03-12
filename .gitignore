@@ -1,0 +1,17 @@
+# Dependency directories
+node_modules/
+dist/
+.env
+.env.local
+
+# Project specific exclusions
+docs/
+.gemini/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

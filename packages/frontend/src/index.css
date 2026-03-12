@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+/* 引入 Claude 风格字体 (Google Fonts) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;500;700&display=swap');
+
+@theme {
+  /* 扩展自定义色彩 */
+  --color-claude-bg: #FDFDFD;
+  --color-claude-bg-dark: #1E1E1E;
+  --color-claude-text-main: #2D2D2D;
+  --color-claude-text-muting: #6B6B6B;
+  --color-claude-text-main-dark: #E2E2E2;
+  --color-claude-text-muting-dark: #9A9A9A;
+  --color-claude-accent: #D97757;
+  --color-claude-border: #E5E5E5;
+  --color-claude-border-dark: #333333;
+
+  /* 扩展自定义字体 */
+  --font-sans: 'Inter', 'Noto Sans SC', system-ui, sans-serif;
+  --font-serif: 'Noto Serif SC', 'Georgia', serif;
+}
+
+/* Base styles */
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-claude-bg);
+    color: var(--color-claude-text-main);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Dark mode overrides (Assuming media query or a class strategy) */
+  @media (prefers-color-scheme: dark) {
+    body {
+      background-color: var(--color-claude-bg-dark);
+      color: var(--color-claude-text-main-dark);
+    }
+  }
+}
+
+/* NutUI 主题覆盖 (覆盖京东红，适应 Claude 风格复古强调色) */
+:root {
+  --nutui-color-primary: var(--color-claude-accent);
+  --nutui-color-primary-stop-1: #E08569;
+  --nutui-color-primary-stop-2: #D97757;
+  --nutui-button-primary-background-color: var(--color-claude-accent);
+  --nutui-button-border-radius: 8px;
+}
