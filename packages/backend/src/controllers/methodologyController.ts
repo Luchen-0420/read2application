@@ -7,6 +7,10 @@ export const createMethodology = async (req: Request, res: Response) => {
     const { bookId } = req.params;
     const { name, description, steps, applicableScenarios, tags = [] } = req.body;
 
+    if (!bookId || typeof bookId !== 'string') {
+      return res.status(400).json({ error: 'Invalid bookId' });
+    }
+
     // tags parameter is expected to be an array of string tag names
     const methodology = await prisma.methodology.create({
       data: {
@@ -99,5 +103,21 @@ export const matchMethodologies = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to match methodologies' });
+  }
+};
+
+export const deleteMethodology = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id || typeof id !== 'string') return res.status(400).json({ error: 'ID is required' });
+    
+    await prisma.methodology.delete({
+      where: { id: id as string },
+    });
+    
+    res.json({ message: 'Methodology deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to delete methodology' });
   }
 };

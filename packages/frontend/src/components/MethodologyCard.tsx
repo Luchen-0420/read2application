@@ -1,10 +1,10 @@
-import React from 'react';
-import { BookOpen, Check, Hash } from 'lucide-react';
+import { BookOpen, Check, Hash, Trash2 } from 'lucide-react';
 
 interface MethodologyCardProps {
   methodology: any;
   selected?: boolean;
   onSelect?: () => void;
+  onDelete?: (id: string) => void;
   selectable?: boolean;
 }
 
@@ -12,12 +12,20 @@ const MethodologyCard: React.FC<MethodologyCardProps> = ({
   methodology, 
   selected = false, 
   onSelect,
+  onDelete,
   selectable = true 
 }) => {
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm('确定要删除这条方法论吗？删除后相关的标签记录也将被移除。')) {
+      onDelete?.(methodology.id);
+    }
+  };
+
   return (
     <div 
       onClick={selectable ? onSelect : undefined}
-      className={`relative bg-white border rounded-xl p-6 transition-all ${
+      className={`relative bg-white border rounded-xl p-6 transition-all group ${
         selectable ? 'cursor-pointer hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)]' : ''
       } ${
         selected ? 'border-[#D97757] ring-1 ring-[#D97757]/20 bg-orange-50/10' : 'border-[#E5E5E5] hover:border-[#D97757]/50'
@@ -30,6 +38,17 @@ const MethodologyCard: React.FC<MethodologyCardProps> = ({
         }`}>
           {selected && <Check size={12} className="text-white" />}
         </div>
+      )}
+
+      {/* Delete button (only if onDelete provided) */}
+      {!selectable && onDelete && (
+        <button 
+          onClick={handleDelete}
+          className="absolute top-6 right-6 p-2 text-[#CED4DA] hover:text-red-400 hover:bg-red-50 rounded-lg transition-all"
+          title="删除方法论"
+        >
+          <Trash2 size={16} />
+        </button>
       )}
 
       <div className="flex items-center gap-2 mb-3 pr-8">

@@ -53,6 +53,11 @@ export const createMethodology = async (bookId: string, data: any) => {
   return response.data;
 };
 
+export const deleteMethodology = async (id: string) => {
+  const response = await api.delete(`/methodology/${id}`);
+  return response.data;
+};
+
 export const matchMethodologies = async (query: string) => {
   const response = await api.get('/match', { params: { query } });
   return response.data;

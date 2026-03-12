@@ -3,7 +3,7 @@ import { useAppStore } from '../store';
 import { Loader2, BookOpen, Search, X, ArrowLeft, Filter } from 'lucide-react';
 import MethodologyCard from '../components/MethodologyCard';
 import BookCard from '../components/BookCard';
-import { reclassifyBooks } from '../api';
+import { reclassifyBooks, deleteMethodology } from '../api';
 
 const categories = ["全部", "理财", "自我成长", "心理学", "商业", "科技", "文学", "生活方式", "其他"];
 
@@ -36,6 +36,25 @@ const LibraryPage: React.FC = () => {
       } finally {
         setIsReclassifying(false);
       }
+    }
+  };
+
+  const handleDeleteMethodology = async (methodId: string) => {
+    try {
+      await deleteMethodology(methodId);
+      // Refresh the book list to reflect the change
+      await loadBooks();
+      // Also update the selected book since its methodology was removed
+      if (selectedBook) {
+        const updatedBook = books.find(b => b.id === selectedBook.id);
+        if (updatedBook) {
+          setSelectedBook(updatedBook);
+        } else {
+          setSelectedBook(null); // Should not happen if only methodology deleted
+        }
+      }
+    } catch (err) {
+      alert('删除失败，请重试');
     }
   };
 
@@ -256,7 +275,12 @@ const LibraryPage: React.FC = () => {
                 </h4>
                 <div className="space-y-6">
                   {selectedBook.methodologies?.map((method: any) => (
-                    <MethodologyCard key={method.id} methodology={{ ...method, book: undefined }} selectable={false} />
+                    <MethodologyCard 
+                      key={method.id} 
+                      methodology={{ ...method, book: undefined }} 
+                      selectable={false} 
+                      onDelete={handleDeleteMethodology}
+                    />
                   ))}
                   {(!selectedBook.methodologies || selectedBook.methodologies.length === 0) && (
                     <div className="text-center py-12 bg-[#F9F9F8] rounded-3xl border border-dashed border-[#E5E5E5]">

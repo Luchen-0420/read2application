@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getBooks, getBookById, createBook, searchDouban, getDoubanBookDetail, reclassifyAllBooks } from '../controllers/bookController';
-import { createMethodology, matchMethodologies } from '../controllers/methodologyController';
+import { createMethodology, matchMethodologies, deleteMethodology } from '../controllers/methodologyController';
 import { generatePlanInquiry, generatePlan, extractMethodology } from '../services/aiService';
 import { getPlans, createPlan, deletePlan } from '../controllers/planController';
 
@@ -16,6 +16,7 @@ router.get('/books/:id', getBookById);
 
 // Methodologies
 router.post('/books/:bookId/methodologies', createMethodology);
+router.delete('/methodology/:id', deleteMethodology);
 router.get('/match', matchMethodologies);
 
 // AI & Plans
