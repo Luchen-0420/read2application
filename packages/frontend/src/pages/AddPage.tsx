@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookPlus, Plus, X, Loader2, Search, Sparkles, ChevronDown } from 'lucide-react';
-import { createBook, createMethodology, searchDouban, extractMethodology, getDoubanBookDetail } from '../api';
+import { BookPlus, Plus, X, Loader2, Search, Sparkles, ChevronDown, Zap } from 'lucide-react';
+import { createBook, createMethodology, searchDouban, extractMethodology, getDoubanBookDetail, generateTags } from '../api';
 import { useAppStore } from '../store';
 
 const categories = ["理财", "自我成长", "心理学", "商业", "科技", "文学", "生活方式", "其他"];
@@ -33,6 +33,7 @@ const AddPage: React.FC = () => {
   // AI Extract
   const [aiExtractText, setAiExtractText] = useState('');
   const [isExtracting, setIsExtracting] = useState(false);
+  const [isGeneratingTags, setIsGeneratingTags] = useState(false);
 
   const handleAddStep = () => setSteps([...steps, { content: '' }]);
   const handleRemoveStep = (index: number) => {
@@ -106,6 +107,24 @@ const AddPage: React.FC = () => {
       alert("提炼失败，请检查 AI 设置页配置");
     } finally {
       setIsExtracting(false);
+    }
+  };
+
+  const handleGenerateTags = async () => {
+    if (!methodName || !methodDesc) {
+      return alert("请先填写方法论名称和原理简述，以便 AI 提炼标签");
+    }
+    
+    setIsGeneratingTags(true);
+    try {
+      const { tags: aiTags } = await generateTags(methodName, methodDesc);
+      if (aiTags) {
+        setTags(aiTags);
+      }
+    } catch (e) {
+      alert("生成标签失败，请检查 AI 设置");
+    } finally {
+      setIsGeneratingTags(false);
     }
   };
 
@@ -358,7 +377,18 @@ const AddPage: React.FC = () => {
               </div>
 
               <div className="space-y-2 pt-2">
-                <label className="text-sm font-medium text-[#6B6B6B]">标签 (Tag) — 逗号分隔</label>
+                <label className="text-sm font-medium text-[#6B6B6B] flex items-center justify-between">
+                  <span>标签 (Tag) — 逗号分隔</span>
+                  <button
+                    type="button"
+                    onClick={handleGenerateTags}
+                    disabled={isGeneratingTags || !methodName || !methodDesc}
+                    className="flex items-center gap-1 text-[11px] font-bold text-[#D97757] hover:text-[#C26245] transition-all disabled:opacity-30"
+                  >
+                    {isGeneratingTags ? <Loader2 size={12} className="animate-spin" /> : <Zap size={10} />}
+                    AI 一键生成
+                  </button>
+                </label>
                 <input value={tags} onChange={e => setTags(e.target.value)} type="text" className="w-full bg-white border border-[#E5E5E5] rounded-lg px-4 py-2.5 focus:border-[#D97757] focus:ring-1 focus:ring-[#D97757] outline-none transition-all placeholder:text-[#C2C2C2] text-[#2D2D2D]" placeholder="理财, 自信建立, 习惯养成" />
               </div>
             </div>

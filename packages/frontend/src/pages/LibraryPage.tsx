@@ -3,7 +3,7 @@ import { useAppStore } from '../store';
 import { Loader2, BookOpen, Search, X, ArrowLeft, Filter } from 'lucide-react';
 import MethodologyCard from '../components/MethodologyCard';
 import BookCard from '../components/BookCard';
-import { reclassifyBooks, deleteMethodology } from '../api';
+import { reclassifyBooks, deleteMethodology, batchDeleteBooks } from '../api';
 
 const categories = ["全部", "理财", "自我成长", "心理学", "商业", "科技", "文学", "生活方式", "其他"];
 
@@ -14,6 +14,8 @@ const LibraryPage: React.FC = () => {
   const [selectedBook, setSelectedBook] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isReclassifying, setIsReclassifying] = useState(false);
+  const [isManageMode, setIsManageMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const itemsPerPage = 10; // 5 columns * 2 rows
 
   useEffect(() => {
@@ -58,6 +60,30 @@ const LibraryPage: React.FC = () => {
     }
   };
 
+  const toggleSelect = (bookId: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(bookId)) {
+      newSelected.delete(bookId);
+    } else {
+      newSelected.add(bookId);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`确定要删除选中的 ${selectedIds.size} 本书籍吗？此操作不可撤销。`)) return;
+
+    try {
+      await batchDeleteBooks(Array.from(selectedIds));
+      await loadBooks();
+      setSelectedIds(new Set());
+      setIsManageMode(false);
+    } catch (err) {
+      alert('批量删除失败');
+    }
+  };
+
   const filteredBooks = books.filter(book => {
     const q = searchQuery.toLowerCase();
     const matchesSearch = (
@@ -83,28 +109,44 @@ const LibraryPage: React.FC = () => {
   return (
     <div className="w-full animate-in fade-in duration-500 pb-20">
       {/* Header with Search and Stats */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 shrink-0 pt-4">
-        <div className="flex items-start gap-4">
-          <div>
-            <h1 className="text-3xl font-serif font-bold text-[#1A1A1A] tracking-tight">我的方法库</h1>
-            <p className="text-[#9A9A9A] mt-1.5 text-sm font-medium tracking-wide">
-              共收录 {books.length} 本书籍
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 shrink-0 pt-4">
+          <div className="flex items-start gap-4">
+            <div>
+              <h1 className="text-3xl font-serif font-bold text-[#1A1A1A] tracking-tight">我的方法库</h1>
+              <p className="text-[#9A9A9A] mt-1.5 text-sm font-medium tracking-wide">
+                共收录 {books.length} 本书籍
+                {uncategorizedCount > 0 && (
+                  <span className="ml-2 text-[#D97757]/60">({uncategorizedCount} 本待分类)</span>
+                )}
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setIsManageMode(!isManageMode);
+                  setSelectedIds(new Set());
+                }}
+                className={`px-3 py-1 border rounded-lg text-[10px] font-bold transition-all flex items-center gap-2 ${
+                  isManageMode 
+                    ? 'bg-[#1A1A1A] text-white border-[#1A1A1A]' 
+                    : 'bg-white border-[#E5E5E5] text-[#6B6B6B] hover:border-[#D97757] hover:text-[#D97757]'
+                }`}
+              >
+                <Filter size={12} />
+                {isManageMode ? '退出管理' : '管理模式'}
+              </button>
               {uncategorizedCount > 0 && (
-                <span className="ml-2 text-[#D97757]/60">({uncategorizedCount} 本待分类)</span>
+                <button 
+                  onClick={handleReclassify}
+                  disabled={isReclassifying}
+                  className="px-3 py-1 bg-[#F9F9F8] border border-[#E5E5E5] rounded-lg text-[10px] font-bold text-[#6B6B6B] hover:text-[#D97757] hover:border-[#D97757]/30 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isReclassifying ? <Loader2 size={12} className="animate-spin" /> : <Filter size={12} />}
+                  AI 批量分类
+                </button>
               )}
-            </p>
+            </div>
           </div>
-          {uncategorizedCount > 0 && (
-            <button 
-              onClick={handleReclassify}
-              disabled={isReclassifying}
-              className="mt-1 px-3 py-1 bg-[#F9F9F8] border border-[#E5E5E5] rounded-lg text-[10px] font-bold text-[#6B6B6B] hover:text-[#D97757] hover:border-[#D97757]/30 transition-all flex items-center gap-2 disabled:opacity-50"
-            >
-              {isReclassifying ? <Loader2 size={12} className="animate-spin" /> : <Filter size={12} />}
-              AI 批量分类
-            </button>
-          )}
-        </div>
         
         <div className="relative group w-full md:w-80">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#ADB5BD] group-focus-within:text-[#D97757] transition-colors">
@@ -164,11 +206,36 @@ const LibraryPage: React.FC = () => {
         <div className="flex flex-col gap-12">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-x-6 gap-y-12">
             {paginatedBooks.map(book => (
-              <div key={book.id} className="animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both" style={{ animationDelay: `${Math.min(paginatedBooks.indexOf(book) * 50, 500)}ms` }}>
+              <div 
+                key={book.id} 
+                className={`relative group animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both ${
+                  isManageMode && selectedIds.has(book.id) ? 'scale-[0.98]' : ''
+                }`}
+                style={{ animationDelay: `${Math.min(paginatedBooks.indexOf(book) * 50, 500)}ms` }}
+              >
                 <BookCard 
                   book={book} 
-                  onClick={() => setSelectedBook(book)} 
+                  onClick={() => isManageMode ? toggleSelect(book.id) : setSelectedBook(book)} 
                 />
+                
+                {isManageMode && (
+                  <>
+                    <div 
+                      onClick={(e) => { e.stopPropagation(); toggleSelect(book.id); }}
+                      className={`absolute top-3 right-3 w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer transition-all z-20 ${
+                        selectedIds.has(book.id) 
+                          ? 'bg-[#D97757] border-[#D97757] scale-110 shadow-lg' 
+                          : 'bg-white/90 border-[#E5E5E5] hover:border-[#D97757]'
+                      }`}
+                    >
+                      {selectedIds.has(book.id) && <X size={14} className="text-white rotate-45" />}
+                    </div>
+                    {/* Invisible overlay to capture clicks if not clicking exact card content */}
+                    {!selectedIds.has(book.id) && (
+                      <div className="absolute inset-0 bg-transparent rounded-2xl z-10 cursor-pointer" onClick={() => toggleSelect(book.id)} />
+                    )}
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -292,6 +359,28 @@ const LibraryPage: React.FC = () => {
             </div>
           </div>
         </>
+      )}
+      {/* Batch Action Bar */}
+      {isManageMode && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md border border-[#E5E5E5] px-8 py-4 rounded-3xl shadow-2xl flex items-center gap-10 z-[100] animate-in slide-in-from-bottom-10 duration-500 ease-out">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-bold text-[#1A1A1A]">已选中 {selectedIds.size} 本书籍</span>
+            <button 
+              onClick={() => setSelectedIds(new Set())}
+              className="text-xs text-[#9A9A9A] hover:text-[#D97757] font-medium"
+            >
+              取消全选
+            </button>
+          </div>
+          <div className="w-[1px] h-6 bg-[#E5E5E5]" />
+          <button
+            onClick={handleBatchDelete}
+            disabled={selectedIds.size === 0}
+            className="flex items-center gap-2 px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-bold transition-all disabled:opacity-30 disabled:grayscale shadow-lg shadow-red-200"
+          >
+            一键移除
+          </button>
+        </div>
       )}
     </div>
   );

@@ -246,3 +246,52 @@ export const classifyBook = async (req: Request, book: { title: string; author?:
     return '其他';
   }
 };
+
+export const generatePlanReflection = async (req: Request, res: Response) => {
+  try {
+    const { plan, logs } = req.body;
+    
+    if (!plan || !logs) {
+      return res.status(400).json({ error: 'Plan context and logs are required' });
+    }
+
+    const { openai, model } = getOpenAIClient(req);
+
+    const logContext = logs.map((l: any, idx: number) => 
+      `记录 ${idx + 1} [${new Date(l.timestamp).toLocaleDateString()}] 心情: ${l.mood || '平稳'}\n内容: ${l.content}`
+    ).join('\n\n');
+
+    const prompt = `你是一个睿智、温暖且具有洞察力的个人导师。
+用户完成了一个名为《${plan.title}》的实践计划。
+计划原始内容：
+"""
+${plan.content}
+"""
+
+以下是用户在执行过程中的真实记录（日志）：
+"""
+${logContext}
+"""
+
+请对用户的这段实践旅程进行一次深度复盘与总结。
+要求：
+1. **洞察执行过程**：指出用户做得好的地方，以及在日志中表现出的情绪波动或瓶颈点。
+2. **提炼成长价值**：从这一系列行动中，帮用户总结出超越计划本身的认知提升（例如：你是如何建立起微小习惯的？）。
+3. **给出后续建议**：结合本次经验，用户下一步该如何优化或继续进阶？
+4. **语气要求**：富有同理心，鼓励为主，篇幅控制在 300-500 字，使用 Markdown 格式（可以包含加粗、列表）。
+
+请直接返回复盘文本，不要包含 JSON 结构。`;
+
+    const completion = await openai.chat.completions.create({
+      model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.8,
+    });
+
+    const reflection = completion.choices[0].message.content || '未生成总结内容';
+    res.json({ reflection });
+  } catch (error) {
+    console.error("AI Error (Reflection):", error);
+    res.status(500).json({ error: 'Failed to generate plan reflection' });
+  }
+};

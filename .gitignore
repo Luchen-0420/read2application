@@ -15,3 +15,8 @@ docs/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Cache directories
+.npm-cache/
+**/node_modules/
+**/dist/

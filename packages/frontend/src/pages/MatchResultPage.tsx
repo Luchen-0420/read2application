@@ -92,10 +92,12 @@ const MatchResultPage: React.FC = () => {
   };
 
   const handleConfirmSave = async () => {
-    if (!planData) return;
+    if (!planData || selectedIds.size === 0) return;
     setSaveStatus('SAVING');
     try {
-      await createPlan(planData.title || '定制化实施方案', planData.summary || '', planData.phases);
+      // Use the first selected methodology as the primary link
+      const primaryMethodId = Array.from(selectedIds)[0];
+      await createPlan(planData.title || '定制化实施方案', planData.phases, primaryMethodId);
       setSaveStatus('SAVED');
       setTimeout(() => setSaveStatus('IDLE'), 3000);
     } catch (saveError) {

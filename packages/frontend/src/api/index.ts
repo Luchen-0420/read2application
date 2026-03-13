@@ -58,6 +58,16 @@ export const deleteMethodology = async (id: string) => {
   return response.data;
 };
 
+export const batchDeleteBooks = async (ids: string[]) => {
+  const response = await api.post('/books/batch-delete', { ids });
+  return response.data;
+};
+
+export const generateTags = async (name: string, description: string) => {
+  const response = await api.post('/methodology/generate-tags', { name, description });
+  return response.data;
+};
+
 export const matchMethodologies = async (query: string) => {
   const response = await api.get('/match', { params: { query } });
   return response.data;
@@ -83,8 +93,23 @@ export const getPlans = async () => {
   return response.data;
 };
 
-export const createPlan = async (title: string, summary: string, content: any) => {
-  const response = await api.post('/plans', { title, summary, content });
+export const createPlan = async (title: string, content: any, methodologyId: string) => {
+  const response = await api.post('/plans', { title, content, methodologyId });
+  return response.data;
+};
+
+export const addPlanLog = async (id: string, content: string, mood?: string) => {
+  const response = await api.post(`/plans/${id}/logs`, { content, mood });
+  return response.data;
+};
+
+export const completePlan = async (id: string, reflection: string) => {
+  const response = await api.post(`/plans/${id}/complete`, { reflection });
+  return response.data;
+};
+
+export const generatePlanReflection = async (plan: any, logs: any[]) => {
+  const response = await api.post('/ai/plan/reflection', { plan, logs });
   return response.data;
 };
 

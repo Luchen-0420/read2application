@@ -102,6 +102,26 @@ export const reclassifyAllBooks = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteBooks = async (req: Request, res: Response) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids)) {
+      return res.status(400).json({ error: 'IDs array is required' });
+    }
+
+    await prisma.book.deleteMany({
+      where: {
+        id: { in: ids }
+      }
+    });
+
+    res.json({ message: `Successfully deleted ${ids.length} books` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to delete books' });
+  }
+};
+
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { getOpenAIClient } from '../services/aiService';

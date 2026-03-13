@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { getBooks, getBookById, createBook, searchDouban, getDoubanBookDetail, reclassifyAllBooks } from '../controllers/bookController';
 import { createMethodology, matchMethodologies, deleteMethodology } from '../controllers/methodologyController';
-import { generatePlanInquiry, generatePlan, extractMethodology } from '../services/aiService';
-import { getPlans, createPlan, deletePlan } from '../controllers/planController';
+import { generatePlanInquiry, generatePlan, extractMethodology, generatePlanReflection } from '../services/aiService';
+import { getPlans, createPlan, deletePlan, addPlanLog, completePlan } from '../controllers/planController';
 
 const router = Router();
 
@@ -21,11 +21,14 @@ router.get('/match', matchMethodologies);
 
 // AI & Plans
 router.post('/ai/extract', extractMethodology);
+router.post('/ai/plan/reflection', generatePlanReflection);
 router.post('/plan/inquiry', generatePlanInquiry);
 router.post('/plan/generate', generatePlan);
 
 router.get('/plans', getPlans);
 router.post('/plans', createPlan);
+router.post('/plans/:id/logs', addPlanLog);
+router.post('/plans/:id/complete', completePlan);
 router.delete('/plans/:id', deletePlan);
 
 export default router;

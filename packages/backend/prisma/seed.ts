@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../src/generated/client';
 
 const prisma = new PrismaClient();
 
@@ -145,7 +145,7 @@ main()
   .then(async () => {
     await prisma.$disconnect();
   })
-  .catch(async (e) => {
+  .catch(async (e: any) => {
     console.error(e);
     await prisma.$disconnect();
     process.exit(1);

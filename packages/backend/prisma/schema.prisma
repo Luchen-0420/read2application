@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/client"
 }
 
 datasource db {
@@ -29,6 +30,7 @@ model Methodology {
   applicableScenarios String?
   createdAt           DateTime         @default(now())
   tags                MethodologyTag[]
+  plans               Plan[]
 }
 
 model Tag {
@@ -47,9 +49,14 @@ model MethodologyTag {
 }
 
 model Plan {
-  id        String   @id @default(uuid())
-  title     String
-  summary   String
-  content   Json     // stores the phases and actions
-  createdAt DateTime @default(now())
+  id              String   @id @default(uuid())
+  title           String
+  content         Json     // stores the phases and actions
+  methodologyId   String
+  methodology     Methodology @relation(fields: [methodologyId], references: [id], onDelete: Cascade)
+  status          String   @default("active") // "active" or "completed"
+  logs            Json?    // Array of { timestamp, content, mood }
+  reflection      String?  @db.Text
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
 }
