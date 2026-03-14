@@ -18,29 +18,42 @@ export const getOpenAIClient = (req: Request) => {
 export const generatePlanInquiry = async (req: Request, res: Response) => {
   try {
     const { methodologies } = req.body;
-    
+
     if (!methodologies || methodologies.length === 0) {
       return res.status(400).json({ error: 'At least one methodology is required' });
     }
 
     const { openai, model } = getOpenAIClient(req);
 
-    const methodologyContext = methodologies.map((m: any, idx: number) => 
+    const methodologyContext = methodologies.map((m: any, idx: number) =>
       `${idx + 1}. [${m.name}] (来自 《${m.book?.title || '未知书籍'}》)\n简介：${m.description}\n步骤：${m.steps?.map((s: any) => s.content).join(' -> ')}`
     ).join('\n\n');
 
-    const prompt = `你是一个专业的阅读转化与行动规划教练。
-用户希望将以下读书方法论转化为个人的落地实践：
-${methodologyContext}
+    const prompt = `你是一位专业的阅读实践转化教练。
 
-为了给用户提供一份最适合他当前实际情况、生活习惯和痛点的实施计划，你需要先向用户提出 2-3 个关键的追问。
-要求：
-1. 追问必须具有启发性且容易回答（例如：你的具体瓶颈是什么？你每周能固定出多少时间？你个人的执行力风格偏向哪种？）
-2. 不要一次性直接给方案，而是仅仅提出"追问"。
-3. 请严格返回合法的 JSON 格式，结构如下：
+## 背景
+用户希望将以下读书方法论落地为个人可执行的计划：
+<methodology>
+${methodologyContext}
+</methodology>
+
+## 你的任务
+在给出方案之前，先提出 2-3 个追问，帮助你深入了解用户的实际情况。
+
+## 追问质量标准
+- 紧扣上方方法论的核心执行难点，而非泛泛而问
+- 每个问题聚焦一个维度（如：当前瓶颈、可用时间、执行偏好）
+- 措辞具体、易于回答，避免抽象提问
+
+## 输出格式
+严格返回合法 JSON，不要包含任何额外文字：
 {
-  "message": "<一段简短友好的开场白，包含具体的追问内容，使用 \\n 换行>",
-  "questions": ["<核心痛点>", "<可用时间>", "<个人习惯/能力>"]
+  "opening": "<1-2 句友好的开场白，不含问题>",
+  "questions": [
+    "<追问1，完整的问句>",
+    "<追问2，完整的问句>",
+    "<追问3，完整的问句（可选）>"
+  ]
 }`;
 
     const completion = await openai.chat.completions.create({
@@ -63,8 +76,8 @@ ${methodologyContext}
 export const semanticMatchMethodologies = async (req: Request, query: string, methodologies: any[]) => {
   try {
     const { openai, model } = getOpenAIClient(req);
-    
-    const context = methodologies.map((m, idx) => 
+
+    const context = methodologies.map((m, idx) =>
       `${idx}. [ID: ${m.id}] 名称: ${m.name}\n简介: ${m.description}\n场景: ${m.applicableScenarios}`
     ).join('\n\n');
 
@@ -103,14 +116,14 @@ ${context}
 export const generatePlan = async (req: Request, res: Response) => {
   try {
     const { methodologies, userContext } = req.body;
-    
+
     if (!methodologies || !userContext) {
       return res.status(400).json({ error: 'Methodologies and user context are required' });
     }
 
     const { openai, model } = getOpenAIClient(req);
 
-    const methodologyContext = methodologies.map((m: any, idx: number) => 
+    const methodologyContext = methodologies.map((m: any, idx: number) =>
       `${idx + 1}. [${m.name}] (来自 《${m.book?.title || '未知书籍'}》)\n简介：${m.description}\n步骤：${m.steps?.map((s: any) => s.content).join(' -> ')}`
     ).join('\n\n');
 
@@ -170,32 +183,42 @@ ${JSON.stringify(req.body.previousPlan, null, 2)}
 export const extractMethodology = async (req: Request, res: Response) => {
   try {
     const { text } = req.body;
-    
+
     if (!text) {
       return res.status(400).json({ error: 'Text content is required' });
     }
 
     const { openai, model } = getOpenAIClient(req);
 
-    const prompt = `你是一个出色的阅读笔记专家。
-请从以下长文本中提取出核心的"方法论"，并将其结构化为可执行的步骤。
-这段文本可能包含了一些感悟、故事，请忽略冗余信息，只提炼最核心的框架。
+    const prompt = `你是一位专业的阅读方法论提炼专家。
 
-待提炼文本：
-"""
+## 你的任务
+从下方文本中提炼出核心方法论，结构化为可直接执行的步骤框架。
+忽略感悟、故事、举例等冗余内容，只保留可复用的方法本质。
+
+## 待提炼文本
+<source_text>
 ${text}
-"""
+</source_text>
 
-请严格返回合法的 JSON 格式，不要多余字符，结构如下：
+## 提炼质量标准
+1. steps 控制在 3-7 步，每步描述一个独立的具体动作
+2. 每步的 content 以动词开头（如"列出…"、"回顾…"、"对比…"）
+3. tags 提取 2-5 个，优先使用已有通用标签（如：效率、习惯养成、学习、写作、理财）
+
+## 输出格式
+严格返回合法 JSON，不要包含任何额外文字：
 {
-  "name": "<提炼出的方法论名称，比如：费曼技巧、3分钟法则等>",
-  "description": "<用一两句话简述它的核心原理和目的>",
-  "applicableScenarios": "<这个方法论适合用来解决什么样的痛点或场景？>",
+  "name": "<方法论名称，如：费曼技巧、3分钟法则>",
+  "description": "<1-2 句话：核心原理 + 解决什么问题>",
+  "applicableScenarios": ["<场景1>", "<场景2>"],
   "steps": [
-    { "content": "<第1步具体做什么>" },
-    { "content": "<第2步具体做什么>" }
+    {
+      "index": 1,
+      "content": "<以动词开头的具体动作>"
+    }
   ],
-  "tags": ["<相关的标签，比如：理财, 效率, 习惯养成>"]
+  "tags": ["<标签1>", "<标签2>"]
 }`;
 
     const completion = await openai.chat.completions.create({
@@ -218,10 +241,10 @@ ${text}
 export const classifyBook = async (req: Request, book: { title: string; author?: string; summary?: string }) => {
   try {
     const { openai, model } = getOpenAIClient(req);
-    
+
     // We pre-define some common categories
     const categories = ["理财", "自我成长", "心理学", "商业", "科技", "文学", "生活方式", "其他"];
-    
+
     const prompt = `你是一个专业的图书分类专家。
 请根据以下书籍的信息，从给定的分类列表中选择最适合的一个分类。
 
@@ -250,37 +273,45 @@ export const classifyBook = async (req: Request, book: { title: string; author?:
 export const generatePlanReflection = async (req: Request, res: Response) => {
   try {
     const { plan, logs } = req.body;
-    
+
     if (!plan || !logs) {
       return res.status(400).json({ error: 'Plan context and logs are required' });
     }
 
     const { openai, model } = getOpenAIClient(req);
 
-    const logContext = logs.map((l: any, idx: number) => 
+    const logContext = logs.map((l: any, idx: number) =>
       `记录 ${idx + 1} [${new Date(l.timestamp).toLocaleDateString()}] 心情: ${l.mood || '平稳'}\n内容: ${l.content}`
     ).join('\n\n');
 
-    const prompt = `你是一个睿智、温暖且具有洞察力的个人导师。
-用户完成了一个名为《${plan.title}》的实践计划。
-计划原始内容：
-"""
-${plan.content}
-"""
+    const prompt = `你是用户的个人实践教练，擅长从行动记录中发现成长模式，以真诚、有温度的方式帮助用户看见自己的成长。
 
-以下是用户在执行过程中的真实记录（日志）：
-"""
+## 本次复盘的背景
+
+用户完成了以下实践计划：
+<plan>
+计划名称：${plan.title}
+计划概述：${plan.summary}
+执行阶段：${plan.phases.map((p, i) => `${i + 1}. ${p.name}（${p.duration}）`).join('、')}
+</plan>
+
+用户在执行过程中的真实记录：
+<logs>
 ${logContext}
-"""
+</logs>
 
-请对用户的这段实践旅程进行一次深度复盘与总结。
-要求：
-1. **洞察执行过程**：指出用户做得好的地方，以及在日志中表现出的情绪波动或瓶颈点。
-2. **提炼成长价值**：从这一系列行动中，帮用户总结出超越计划本身的认知提升（例如：你是如何建立起微小习惯的？）。
-3. **给出后续建议**：结合本次经验，用户下一步该如何优化或继续进阶？
-4. **语气要求**：富有同理心，鼓励为主，篇幅控制在 300-500 字，使用 Markdown 格式（可以包含加粗、列表）。
+## 复盘结构
+请按以下三个部分撰写复盘，每部分 1-3 段：
 
-请直接返回复盘文本，不要包含 JSON 结构。`;
+1. **执行洞察**：用户做得好的地方 + 日志中暴露的情绪波动或卡点，要结合日志中的具体细节，不要泛泛而谈
+2. **成长提炼**：从这段经历中，用户真正习得了什么？聚焦在超越计划本身的认知或能力变化
+3. **下一步建议**：给出 2-3 条具体的进阶方向，每条建议需可直接行动，而非方向性口号
+
+## 输出约束
+- 语气：真诚有温度，鼓励为主，但不要过度赞美，保持真实感
+- 格式：Markdown，可用加粗和列表，不要用二级以上标题
+- 篇幅：300-500 字
+- 直接输出复盘正文，不要有任何前置说明`;
 
     const completion = await openai.chat.completions.create({
       model,
